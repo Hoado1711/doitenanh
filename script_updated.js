@@ -44,7 +44,7 @@ async function readExcel(file) {
     });
 }
 
-// Hiển thị dữ liệu Excel
+// Hiển thị dữ liệu Excel + nút chụp ảnh
 function displayExcelData(data) {
     if (data.length === 0) {
         excelDataDiv.innerHTML = '<p>Không có dữ liệu</p>';
@@ -61,7 +61,7 @@ function displayExcelData(data) {
         headers.forEach(h => {
             html += `<td>${row[h]}</td>`;
         });
-        html += `<td><button onclick="captureImage(${index})">📷</button></td></tr>`;
+        html += `<td><button onclick="captureImage(${index})">📸 Chụp</button></td></tr>`;
     });
 
     html += '</tbody></table>';
@@ -99,12 +99,20 @@ async function initCamera() {
     }
 }
 
-// Hàm chụp ảnh
+// Chụp ảnh và tải về với tên theo Mã KKS
 function captureImage(index) {
     const row = excelData[index];
-    const fileName = (row["Mã kks thiết bị"] || "anh") + ".jpg";
+    let fileName = "anh.jpg";
 
-    // Chụp từ video
+    // Tìm chính xác cột "Mã KKS Thiết bị"
+    const keys = Object.keys(row);
+    for (const key of keys) {
+        if (key.trim().toLowerCase().includes("kks")) {
+            fileName = (row[key] || "anh") + ".jpg";
+            break;
+        }
+    }
+
     canvas.width = camera.videoWidth;
     canvas.height = camera.videoHeight;
     const context = canvas.getContext('2d');
@@ -118,6 +126,6 @@ function captureImage(index) {
     // Tạo link tải
     downloadLink.href = imageUrl;
     downloadLink.download = fileName;
-    downloadLink.textContent = `Tải về ${fileName}`;
+    downloadLink.textContent = `📥 Tải ${fileName}`;
     downloadLink.style.display = "block";
 }
