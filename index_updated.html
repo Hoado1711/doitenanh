@@ -1,121 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chụp Ảnh và Lưu Dữ Liệu</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
-    <style>
-        #video { display: none; }
-        #canvas { display: none; }
-        button { margin: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Excel Image Capture</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+      padding: 5px;
+    }
+    #video {
+      width: 300px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Chọn File Excel và Chụp Ảnh</h1>
+  <h2>Upload Excel File</h2>
+  <input type="file" id="excelFile" accept=".xlsx" />
+  <br><br>
+  <table id="dataTable"></table>
 
-    <!-- Input chọn file Excel -->
-    <input type="file" id="file-input" accept=".xlsx, .xls" />
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" style="display:none;"></canvas>
 
-    <!-- Bảng để hiển thị dữ liệu Excel -->
-    <table id="data-table" border="1">
-        <thead>
-            <tr>
-                <th>Col 1</th>
-                <th>Col 2</th>
-                <th>Col 3</th>
-                <th>Col 4</th>
-                <th>Col 5</th>
-                <th>Col 6 (Camera)</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+  <script>
+    const excelFileInput = document.getElementById('excelFile');
+    const dataTable = document.getElementById('dataTable');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
 
-    <!-- Nút mở camera -->
-    <button id="start-camera" style="display: none;">Chụp Ảnh</button>
+    let stream;
 
-    <!-- Phần hiển thị camera -->
-    <video id="video" width="320" height="240" autoplay></video>
-    <canvas id="canvas" style="display: none;"></canvas>
+    async function startCamera() {
+      if (!stream) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      }
+    }
 
-    <script>
-        let fileInput = document.getElementById('file-input');
-        let dataTable = document.getElementById('data-table').getElementsByTagName('tbody')[0];
-        let startCameraButton = document.getElementById('start-camera');
-        let videoElement = document.getElementById('video');
-        let canvasElement = document.getElementById('canvas');
-        let context = canvasElement.getContext('2d');
-        let currentFileName = '';
+    function captureAndDownloadImage(filename) {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(function(blob) {
+        saveAs(blob, filename + '.jpg');
+      }, 'image/jpeg');
+    }
 
-        // Đọc và hiển thị dữ liệu từ Excel
-        fileInput.addEventListener('change', function(event) {
-            let file = event.target.files[0];
-            let reader = new FileReader();
-            
-            reader.onload = function(e) {
-                let data = new Uint8Array(e.target.result);
-                let workbook = XLSX.read(data, { type: 'array' });
-                let sheet = workbook.Sheets[workbook.SheetNames[0]];
-                let jsonData = XLSX.utils.sheet_to_json(sheet);
-                
-                // Hiển thị dữ liệu vào bảng
-                jsonData.forEach((row, index) => {
-                    let newRow = dataTable.insertRow();
-                    Object.keys(row).slice(0, 5).forEach(key => {
-                        let cell = newRow.insertCell();
-                        cell.textContent = row[key];
-                    });
+    excelFileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-                    let cameraCell = newRow.insertCell();
-                    let button = document.createElement('button');
-                    button.textContent = 'Chụp Ảnh';
-                    button.onclick = function() {
-                        currentFileName = row['mã kks thiết bị']; // Giả sử cột "mã kks thiết bị" có tên là như vậy
-                        startCameraButton.style.display = 'inline-block'; // Hiện nút mở camera
-                    };
-                    cameraCell.appendChild(button);
-                });
+        dataTable.innerHTML = '';
+        rows.forEach((row, rowIndex) => {
+          const tr = document.createElement('tr');
+          for (let i = 0; i < 5; i++) {
+            const td = document.createElement('td');
+            td.textContent = row[i] || '';
+            tr.appendChild(td);
+          }
+
+          const td = document.createElement('td');
+          if (rowIndex === 0) {
+            td.textContent = 'Chụp Ảnh';
+          } else {
+            const button = document.createElement('button');
+            button.textContent = 'Chụp';
+            button.onclick = async () => {
+              await startCamera();
+              const filename = row[0]; // Giả sử mã KKS thiết bị ở cột đầu tiên
+              captureAndDownloadImage(filename);
             };
-            
-            reader.readAsArrayBuffer(file);
+            td.appendChild(button);
+          }
+          tr.appendChild(td);
+          dataTable.appendChild(tr);
         });
-
-        // Bắt đầu mở camera
-        startCameraButton.addEventListener('click', function() {
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function(stream) {
-                    videoElement.srcObject = stream;
-                    videoElement.style.display = 'block';
-                    startCameraButton.style.display = 'none';
-                    
-                    // Sau khi mở camera, chụp ảnh
-                    setTimeout(() => captureImage(), 2000);
-                })
-                .catch(function(error) {
-                    console.log("Lỗi khi mở camera: ", error);
-                });
-        });
-
-        // Chụp ảnh từ video và lưu lại
-        function captureImage() {
-            context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-            let imageData = canvasElement.toDataURL('image/jpeg');
-
-            // Đổi tên file và tải về
-            let link = document.createElement('a');
-            link.href = imageData;
-            link.download = currentFileName + '.jpg'; // Đổi tên file ảnh
-            link.click();
-
-            // Dừng camera
-            let stream = videoElement.srcObject;
-            let tracks = stream.getTracks();
-            tracks.forEach(track => track.stop());
-
-            videoElement.style.display = 'none';
-            canvasElement.style.display = 'none';
-        }
-    </script>
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  </script>
 </body>
 </html>
