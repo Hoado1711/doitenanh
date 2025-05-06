@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống chụp ảnh và đổi tên tự động</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .camera-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #camera {
+            width: 100%;
+            max-width: 640px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+        }
+        #capture-btn, #upload-btn, #retake-btn {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+        }
+        #result {
+            display: none;
+        }
+        #download-link {
+            display: block;
+            margin-top: 10px;
+            color: blue;
+            text-decoration: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .selected {
+            background-color: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hệ thống chụp ảnh và đổi tên tự động</h1>
+        
+        <div>
+            <h3>1. Tải lên file Excel</h3>
+            <input type="file" id="excel-file" accept=".xlsx, .xls">
+            <div id="excel-data"></div>
+        </div>
+        
+        <div class="camera-container">
+            <h3>2. Chụp ảnh</h3>
+            <video id="camera" autoplay playsinline></video>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <div>
+                <button id="capture-btn" disabled>Chụp ảnh</button>
+                <button id="retake-btn" disabled>Chụp lại</button>
+            </div>
+            
+            <div id="result">
+                <h4>Ảnh đã chụp:</h4>
+                <img id="photo" alt="Ảnh đã chụp">
+                <button id="upload-btn">Lưu ảnh</button>
+                <a id="download-link" download>Tải ảnh về</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
