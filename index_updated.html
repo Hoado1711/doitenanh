@@ -1,36 +1,121 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Chụp ảnh theo Excel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chụp Ảnh và Lưu Dữ Liệu</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        video, canvas, img { width: 100%; max-width: 400px; margin-top: 20px; }
-        #download-link { display: none; margin-top: 10px; }
+        #video { display: none; }
+        #canvas { display: none; }
+        button { margin: 10px; }
     </style>
 </head>
 <body>
-    <h2>📸 Chụp ảnh & Đổi tên theo Excel</h2>
+    <h1>Chọn File Excel và Chụp Ảnh</h1>
 
-    <label for="excel-file">📄 Tải file Excel:</label>
-    <input type="file" id="excel-file" accept=".xlsx, .xls"><br>
+    <!-- Input chọn file Excel -->
+    <input type="file" id="file-input" accept=".xlsx, .xls" />
 
-    <div id="excel-data"></div>
+    <!-- Bảng để hiển thị dữ liệu Excel -->
+    <table id="data-table" border="1">
+        <thead>
+            <tr>
+                <th>Col 1</th>
+                <th>Col 2</th>
+                <th>Col 3</th>
+                <th>Col 4</th>
+                <th>Col 5</th>
+                <th>Col 6 (Camera)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-    <h3>🎥 Camera</h3>
-    <video id="camera" autoplay playsinline></video>
+    <!-- Nút mở camera -->
+    <button id="start-camera" style="display: none;">Chụp Ảnh</button>
 
-    <div id="result" style="display: none;">
-        <h3>🖼️ Ảnh đã chụp</h3>
-        <canvas id="canvas" style="display:none;"></canvas>
-        <img id="photo" alt="Ảnh đã chụp" />
-        <a id="download-link" download>📥 Tải ảnh</a>
-    </div>
+    <!-- Phần hiển thị camera -->
+    <video id="video" width="320" height="240" autoplay></video>
+    <canvas id="canvas" style="display: none;"></canvas>
 
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <script src="script.js"></script>
+    <script>
+        let fileInput = document.getElementById('file-input');
+        let dataTable = document.getElementById('data-table').getElementsByTagName('tbody')[0];
+        let startCameraButton = document.getElementById('start-camera');
+        let videoElement = document.getElementById('video');
+        let canvasElement = document.getElementById('canvas');
+        let context = canvasElement.getContext('2d');
+        let currentFileName = '';
+
+        // Đọc và hiển thị dữ liệu từ Excel
+        fileInput.addEventListener('change', function(event) {
+            let file = event.target.files[0];
+            let reader = new FileReader();
+            
+            reader.onload = function(e) {
+                let data = new Uint8Array(e.target.result);
+                let workbook = XLSX.read(data, { type: 'array' });
+                let sheet = workbook.Sheets[workbook.SheetNames[0]];
+                let jsonData = XLSX.utils.sheet_to_json(sheet);
+                
+                // Hiển thị dữ liệu vào bảng
+                jsonData.forEach((row, index) => {
+                    let newRow = dataTable.insertRow();
+                    Object.keys(row).slice(0, 5).forEach(key => {
+                        let cell = newRow.insertCell();
+                        cell.textContent = row[key];
+                    });
+
+                    let cameraCell = newRow.insertCell();
+                    let button = document.createElement('button');
+                    button.textContent = 'Chụp Ảnh';
+                    button.onclick = function() {
+                        currentFileName = row['mã kks thiết bị']; // Giả sử cột "mã kks thiết bị" có tên là như vậy
+                        startCameraButton.style.display = 'inline-block'; // Hiện nút mở camera
+                    };
+                    cameraCell.appendChild(button);
+                });
+            };
+            
+            reader.readAsArrayBuffer(file);
+        });
+
+        // Bắt đầu mở camera
+        startCameraButton.addEventListener('click', function() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    videoElement.srcObject = stream;
+                    videoElement.style.display = 'block';
+                    startCameraButton.style.display = 'none';
+                    
+                    // Sau khi mở camera, chụp ảnh
+                    setTimeout(() => captureImage(), 2000);
+                })
+                .catch(function(error) {
+                    console.log("Lỗi khi mở camera: ", error);
+                });
+        });
+
+        // Chụp ảnh từ video và lưu lại
+        function captureImage() {
+            context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+            let imageData = canvasElement.toDataURL('image/jpeg');
+
+            // Đổi tên file và tải về
+            let link = document.createElement('a');
+            link.href = imageData;
+            link.download = currentFileName + '.jpg'; // Đổi tên file ảnh
+            link.click();
+
+            // Dừng camera
+            let stream = videoElement.srcObject;
+            let tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+
+            videoElement.style.display = 'none';
+            canvasElement.style.display = 'none';
+        }
+    </script>
 </body>
 </html>
