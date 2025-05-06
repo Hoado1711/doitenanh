@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Chụp ảnh theo Excel</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        video, canvas, img { width: 100%; max-width: 400px; margin-top: 20px; }
+        #download-link { display: none; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h2>📸 Chụp ảnh & Đổi tên theo Excel</h2>
+
+    <label for="excel-file">📄 Tải file Excel:</label>
+    <input type="file" id="excel-file" accept=".xlsx, .xls"><br>
+
+    <div id="excel-data"></div>
+
+    <h3>🎥 Camera</h3>
+    <video id="camera" autoplay playsinline></video>
+
+    <div id="result" style="display: none;">
+        <h3>🖼️ Ảnh đã chụp</h3>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <img id="photo" alt="Ảnh đã chụp" />
+        <a id="download-link" download>📥 Tải ảnh</a>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
