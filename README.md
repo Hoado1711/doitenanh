@@ -1,2 +1,0 @@
-# doitenanh
-đổi tên ảnh
